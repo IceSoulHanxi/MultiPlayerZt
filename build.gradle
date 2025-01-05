@@ -1,0 +1,58 @@
+plugins {
+    id 'java'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'com.github.johnrengelman.shadow' version "8.1.1"
+}
+
+group = 'com.ixnah.hmcl.mpzt'
+version = '0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation('de.javawi.jstun:jstun:0.7.4') {
+        exclude group: 'org.slf4j'
+    }
+
+    compileOnly "org.pf4j:pf4j:3.13.0"
+    compileOnly "org.slf4j:slf4j-api:2.0.16"
+    compileOnly "org.ow2.asm:asm-tree:9.7.1"
+    compileOnly "org.glavo.hmcl:hmcl-dev:3.6.11.264"
+
+    compileOnly files("libs/loader.jar")
+}
+
+javafx {
+    version = '17'
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+    configuration = 'compileOnly'
+}
+
+tasks.jar {
+    enabled = false
+    dependsOn(tasks.shadowJar)
+}
+
+tasks.shadowJar {
+    archiveClassifier.set(null)
+    manifest {
+        attributes(
+                'Plugin-Class': 'com.ixnah.hmcl.mpzt.MpztPlugin',
+                'Plugin-Id': project.name,
+                'Plugin-Version': project.version,
+                'Implementation-Version': project.version,
+                'Plugin-Provider': 'IceSoulHanxi',
+                'Plugin-Dependencies': 'HMCL@3',
+                'Plugin-Description': 'Multiplayer by zerotier'
+        )
+    }
+}
+
+tasks.withType(JavaCompile.class).configureEach {
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.8"
+
+    options.encoding = "UTF-8"
+}
