@@ -41,20 +41,20 @@ public class ZeroTierNative {
      * before node's constructor returns.
      *
      */
-    public static int ZTS_EVENT_NODE_UP = 200;
+    public static final int ZTS_EVENT_NODE_UP = 200;
 
     /**
      * Node is online -- at least one upstream node appears reachable
      *
      */
-    public static int ZTS_EVENT_NODE_ONLINE = 201;
+    public static final int ZTS_EVENT_NODE_ONLINE = 201;
 
     /**
      * Node is offline -- network does not seem to be reachable by any available
      * strategy
      *
      */
-    public static int ZTS_EVENT_NODE_OFFLINE = 202;
+    public static final int ZTS_EVENT_NODE_OFFLINE = 202;
 
     /**
      * Node is shutting down
@@ -64,7 +64,7 @@ public class ZeroTierNative {
      * handler may appear more idiomatic.
      *
      */
-    public static int ZTS_EVENT_NODE_DOWN = 203;
+    public static final int ZTS_EVENT_NODE_DOWN = 203;
 
     /**
      * A fatal error has occurred. One possible reason is:
@@ -98,80 +98,80 @@ public class ZeroTierNative {
      *
      * Meta-data: none
      */
-    public static int ZTS_EVENT_NODE_FATAL_ERROR = 204;
+    public static final int ZTS_EVENT_NODE_FATAL_ERROR = 204;
 
     /** Network ID does not correspond to a known network */
-    public static int ZTS_EVENT_NETWORK_NOT_FOUND = 210;
+    public static final int ZTS_EVENT_NETWORK_NOT_FOUND = 210;
     /** The version of ZeroTier inside libzt is too old */
-    public static int ZTS_EVENT_NETWORK_CLIENT_TOO_OLD = 211;
+    public static final int ZTS_EVENT_NETWORK_CLIENT_TOO_OLD = 211;
     /** The configuration for a network has been requested (no action needed) */
-    public static int ZTS_EVENT_NETWORK_REQ_CONFIG = 212;
+    public static final int ZTS_EVENT_NETWORK_REQ_CONFIG = 212;
     /** The node joined the network successfully (no action needed) */
-    public static int ZTS_EVENT_NETWORK_OK = 213;
+    public static final int ZTS_EVENT_NETWORK_OK = 213;
     /** The node is not allowed to join the network (you must authorize node) */
-    public static int ZTS_EVENT_NETWORK_ACCESS_DENIED = 214;
+    public static final int ZTS_EVENT_NETWORK_ACCESS_DENIED = 214;
     /** The node has received an IPv4 address from the network controller */
-    public static int ZTS_EVENT_NETWORK_READY_IP4 = 215;
+    public static final int ZTS_EVENT_NETWORK_READY_IP4 = 215;
     /** The node has received an IPv6 address from the network controller */
-    public static int ZTS_EVENT_NETWORK_READY_IP6 = 216;
+    public static final int ZTS_EVENT_NETWORK_READY_IP6 = 216;
     /** Deprecated */
-    public static int ZTS_EVENT_NETWORK_READY_IP4_IP6 = 217;
+    public static final int ZTS_EVENT_NETWORK_READY_IP4_IP6 = 217;
     /** Network controller is unreachable */
-    public static int ZTS_EVENT_NETWORK_DOWN = 218;
+    public static final int ZTS_EVENT_NETWORK_DOWN = 218;
     /** Network change received from controller */
-    public static int ZTS_EVENT_NETWORK_UPDATE = 219;
+    public static final int ZTS_EVENT_NETWORK_UPDATE = 219;
 
     /** TCP/IP stack (lwIP) is up (for debug purposes) */
-    public static int ZTS_EVENT_STACK_UP = 220;
+    public static final int ZTS_EVENT_STACK_UP = 220;
     /** TCP/IP stack (lwIP) id down (for debug purposes) */
-    public static int ZTS_EVENT_STACK_DOWN = 221;
+    public static final int ZTS_EVENT_STACK_DOWN = 221;
 
     /** lwIP netif up (for debug purposes) */
-    public static int ZTS_EVENT_NETIF_UP = 230;
+    public static final int ZTS_EVENT_NETIF_UP = 230;
     /** lwIP netif down (for debug purposes) */
-    public static int ZTS_EVENT_NETIF_DOWN = 231;
+    public static final int ZTS_EVENT_NETIF_DOWN = 231;
     /** lwIP netif removed (for debug purposes) */
-    public static int ZTS_EVENT_NETIF_REMOVED = 232;
+    public static final int ZTS_EVENT_NETIF_REMOVED = 232;
     /** lwIP netif link up (for debug purposes) */
-    public static int ZTS_EVENT_NETIF_LINK_UP = 233;
+    public static final int ZTS_EVENT_NETIF_LINK_UP = 233;
     /** lwIP netif link down (for debug purposes) */
-    public static int ZTS_EVENT_NETIF_LINK_DOWN = 234;
+    public static final int ZTS_EVENT_NETIF_LINK_DOWN = 234;
 
     /** A direct P2P path to peer is known */
-    public static int ZTS_EVENT_PEER_DIRECT = 240;
+    public static final int ZTS_EVENT_PEER_DIRECT = 240;
     /** A direct P2P path to peer is NOT known. Traffic is now relayed  */
-    public static int ZTS_EVENT_PEER_RELAY = 241;
+    public static final int ZTS_EVENT_PEER_RELAY = 241;
     /** A peer is unreachable. Check NAT/Firewall settings */
-    public static int ZTS_EVENT_PEER_UNREACHABLE = 242;
+    public static final int ZTS_EVENT_PEER_UNREACHABLE = 242;
     /** A new path to a peer was discovered */
-    public static int ZTS_EVENT_PEER_PATH_DISCOVERED = 243;
+    public static final int ZTS_EVENT_PEER_PATH_DISCOVERED = 243;
     /** A known path to a peer is now considered dead */
-    public static int ZTS_EVENT_PEER_PATH_DEAD = 244;
+    public static final int ZTS_EVENT_PEER_PATH_DEAD = 244;
 
     /** A new managed network route was added */
-    public static int ZTS_EVENT_ROUTE_ADDED = 250;
+    public static final int ZTS_EVENT_ROUTE_ADDED = 250;
     /** A managed network route was removed */
-    public static int ZTS_EVENT_ROUTE_REMOVED = 251;
+    public static final int ZTS_EVENT_ROUTE_REMOVED = 251;
 
     /** A new managed IPv4 address was assigned to this peer */
-    public static int ZTS_EVENT_ADDR_ADDED_IP4 = 260;
+    public static final int ZTS_EVENT_ADDR_ADDED_IP4 = 260;
     /** A managed IPv4 address assignment was removed from this peer  */
-    public static int ZTS_EVENT_ADDR_REMOVED_IP4 = 261;
+    public static final int ZTS_EVENT_ADDR_REMOVED_IP4 = 261;
     /** A new managed IPv4 address was assigned to this peer  */
-    public static int ZTS_EVENT_ADDR_ADDED_IP6 = 262;
+    public static final int ZTS_EVENT_ADDR_ADDED_IP6 = 262;
     /** A managed IPv6 address assignment was removed from this peer  */
-    public static int ZTS_EVENT_ADDR_REMOVED_IP6 = 263;
+    public static final int ZTS_EVENT_ADDR_REMOVED_IP6 = 263;
 
     /** The node's secret key (identity) */
-    public static int ZTS_EVENT_STORE_IDENTITY_SECRET = 270;
+    public static final int ZTS_EVENT_STORE_IDENTITY_SECRET = 270;
     /** The node's public key (identity) */
-    public static int ZTS_EVENT_STORE_IDENTITY_PUBLIC = 271;
+    public static final int ZTS_EVENT_STORE_IDENTITY_PUBLIC = 271;
     /** The node has received an updated planet config */
-    public static int ZTS_EVENT_STORE_PLANET = 272;
+    public static final int ZTS_EVENT_STORE_PLANET = 272;
     /** New reachability hints and peer configuration */
-    public static int ZTS_EVENT_STORE_PEER = 273;
+    public static final int ZTS_EVENT_STORE_PEER = 273;
     /** New network config */
-    public static int ZTS_EVENT_STORE_NETWORK = 274;
+    public static final int ZTS_EVENT_STORE_NETWORK = 274;
 
     // Socket protocol types
     /** Stream socket */
