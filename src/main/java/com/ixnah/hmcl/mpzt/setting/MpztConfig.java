@@ -6,6 +6,7 @@ import javafx.beans.property.StringProperty;
 public class MpztConfig {
 
     private final StringProperty multiplayerToken = new SimpleStringProperty();
+    private final StringProperty networkId = new SimpleStringProperty();
     // TODO: always orbit moon
 
 
@@ -19,5 +20,17 @@ public class MpztConfig {
 
     public void setMultiplayerToken(String multiplayerToken) {
         this.multiplayerToken.set(multiplayerToken);
+    }
+
+    public String getNetworkId() {
+        return networkId.get();
+    }
+
+    public StringProperty networkIdProperty() {
+        return networkId;
+    }
+
+    public void setNetworkId(String networkId) {
+        this.networkId.set(networkId);
     }
 }
