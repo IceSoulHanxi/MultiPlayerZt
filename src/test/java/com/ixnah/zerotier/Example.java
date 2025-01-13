@@ -49,7 +49,7 @@ public class Example {
         // ZeroTier setup
 
         // Loads dynamic library at initialization time
-//        System.loadLibrary("libzt");
+        System.loadLibrary("libzt");
         ZeroTier.libzt = Native.loadLibrary("libzt", ZeroTierLibrary.class);
         if (zts_init() != ZeroTierNative.ZTS_ERR_OK) {
             throw new ExceptionInInitializerError("JNI init() failed (see GetJavaVM())");
@@ -74,6 +74,7 @@ public class Example {
             ZeroTierNative.zts_util_delay(50);
         }
         System.out.println("Joined");
+        ZeroTier.networkId = networkId;
 
         // IPv4
 
@@ -125,28 +126,23 @@ public class Example {
         if (mode.equals("client")) {
             System.out.println("Starting client...");
             final CompletableFuture<Inet4Address> future = new CompletableFuture<>();
-            try (JmDNS ignored = jmdns) {
-                // Add a service listener
-                jmdns.addServiceListener("_http._tcp.local.", new ServiceListener() {
-                    @Override
-                    public void serviceAdded(ServiceEvent event) {
-                        System.out.println("serviceResolved: " + event.getName() + ", " + Arrays.toString(event.getInfo().getInet4Addresses()));
-                    }
+            jmdns.addServiceListener("_http._tcp.local.", new ServiceListener() {
+                @Override
+                public void serviceAdded(ServiceEvent event) {
+                    System.out.println("serviceResolved: " + event.getName() + ", " + Arrays.toString(event.getInfo().getInet4Addresses()));
+                }
 
-                    @Override
-                    public void serviceRemoved(ServiceEvent event) {
-                        System.out.println("serviceResolved: " + event.getName() + ", " + Arrays.toString(event.getInfo().getInet4Addresses()));
-                    }
+                @Override
+                public void serviceRemoved(ServiceEvent event) {
+                    System.out.println("serviceResolved: " + event.getName() + ", " + Arrays.toString(event.getInfo().getInet4Addresses()));
+                }
 
-                    @Override
-                    public void serviceResolved(ServiceEvent event) {
-                        System.out.println("serviceResolved: " + event.getName() + ", " + Arrays.toString(event.getInfo().getInet4Addresses()));
-                        Arrays.stream(event.getInfo().getInet4Addresses()).findFirst().ifPresent(future::complete);
-                    }
-                });
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                @Override
+                public void serviceResolved(ServiceEvent event) {
+                    System.out.println("serviceResolved: " + event.getName() + ", " + Arrays.toString(event.getInfo().getInet4Addresses()));
+                    Arrays.stream(event.getInfo().getInet4Addresses()).findFirst().ifPresent(future::complete);
+                }
+            });
             future.thenAccept(addr -> {
                 String remoteAddr = addr.getHostAddress();
                 System.out.println("remoteAddr  = " + remoteAddr);

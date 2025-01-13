@@ -58,6 +58,19 @@ public class ZeroTierSocketAddress {
         _port = port;
     }
 
+    public ZeroTierSocketAddress(InetAddress ip, int port)
+    {
+        if (ip.getAddress().length == 4) {
+            _family = ZeroTierNative.ZTS_AF_INET;
+            _ip4 = ip.getAddress();
+        }
+        else if (ip.getAddress().length == 16) {
+            _family = ZeroTierNative.ZTS_AF_INET6;
+            _ip6 = ip.getAddress();
+        }
+        _port = port;
+    }
+
     /**
      * Convert to string (ip portion only)
      */
@@ -87,7 +100,7 @@ public class ZeroTierSocketAddress {
     /**
      * Convert to InetAddress
      */
-    public InetAddress toInetAddress() 
+    public InetAddress toInetAddress()
     {
         if (_family == ZeroTierNative.ZTS_AF_INET) {
             try {

@@ -2,10 +2,12 @@ package com.ixnah.hmcl.mpzt.zerotier;
 
 import com.zerotier.sockets.ZeroTierNative;
 import com.zerotier.sockets.ZeroTierSocket;
+import com.zerotier.sockets.ZeroTierSocketAddress;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
 import java.net.*;
 import java.util.Objects;
 
@@ -33,11 +35,12 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
 
     @Override
     protected void send(DatagramPacket packet) throws IOException {
-        int bytesWritten = ZeroTierNative.zts_bsd_write_offset(
+        ZeroTierSocketAddress addr = new ZeroTierSocketAddress(packet.getAddress(), packet.getPort());
+        int bytesWritten = ZeroTierNative.zts_bsd_sendto(
                 _socket.getNativeFileDescriptor(),
                 packet.getData(),
                 0,
-                packet.getLength());
+                addr);
         if (bytesWritten < 0) {
             throw new IOException("send(DatagramPacket), errno=" + bytesWritten);
         }
@@ -55,11 +58,12 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
 
     @Override
     protected void receive(DatagramPacket packet) throws IOException {
-        int bytesRead = ZeroTierNative.zts_bsd_read_offset(
+        ZeroTierSocketAddress addr = new ZeroTierSocketAddress();
+        int bytesRead = ZeroTierNative.zts_bsd_recvfrom(
                 _socket.getNativeFileDescriptor(),
                 packet.getData(),
                 0,
-                packet.getLength());
+                addr);
         if ((bytesRead <= 0) | (bytesRead == -104) /* EINTR, from SO_RCVTIMEO */) {
             throw new IOException("read(DatagramPacket), errno=" + bytesRead);
         }
@@ -154,7 +158,7 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
                 InetAddress address = null;
                 if (value instanceof NetworkInterface) {
                     if (ZeroTier.node == null) throw new SocketException("ZeroTier node not set");
-                    address = ZeroTier.node.getIPv4Address(ZeroTier.node.getId());
+                    address = ZeroTier.node.getIPv4Address(ZeroTier.networkId);
                 } else if (value instanceof InetAddress) {
                     address = (InetAddress) value;
                 }
@@ -228,8 +232,10 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
 
     static {
         try {
+            Method getDefault = NetworkInterface.class.getDeclaredMethod("getDefault");
+            getDefault.setAccessible(true);
             getDefaultNetworkInterface = MethodHandles.lookup()
-                    .unreflect(NetworkInterface.class.getDeclaredMethod("getDefault"));
+                    .unreflect(getDefault);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }

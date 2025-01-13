@@ -16,7 +16,7 @@ package com.zerotier.sockets;
 /**
  * This class provides an fdset-like behavior to ZeroTierSocket
  */
-class ZeroTierFileDescriptorSet {
+public class ZeroTierFileDescriptorSet {
     byte[] fds_bits = new byte[1024];
 
     /**

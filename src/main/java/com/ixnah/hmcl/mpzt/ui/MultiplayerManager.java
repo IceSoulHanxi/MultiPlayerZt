@@ -1,5 +1,6 @@
 package com.ixnah.hmcl.mpzt.ui;
 
+import com.zerotier.sockets.ZeroTierEventListener;
 import com.zerotier.sockets.ZeroTierNative;
 import com.zerotier.sockets.ZeroTierNode;
 import org.jackhuang.hmcl.util.platform.Architecture;
@@ -79,11 +80,19 @@ public class MultiplayerManager {
                 LockSupport.parkNanos(delayTime);
             }
             if (statusCode != ZTS_ERR_OK) {
+                node.leave(parsedId);
+                node.stop();
                 throw new ExceptionInInitializerError("Node assign ip timeout!");
             }
-
-
             return node;
         }));
     }
+
+    private static final ZeroTierEventListener multiplayerZtEventListener = (id, eventCode) -> {
+        switch (eventCode) {
+            case ZeroTierNative.ZTS_EVENT_NODE_UP: {
+
+            }
+        }
+    };
 }
