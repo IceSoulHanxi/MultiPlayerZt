@@ -4,7 +4,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version "8.1.1"
 }
 
-group = 'com.ixnah.hmcl.mpzt'
+group = 'com.ixnah.mpzt'
 version = '0.1-SNAPSHOT'
 
 repositories {
@@ -32,6 +32,8 @@ dependencies {
     compileOnly files("libs/loader.jar")
 
     testRuntimeOnly "org.slf4j:slf4j-api:2.0.16"
+    testImplementation "org.glavo.hmcl:hmcl-dev:3.6.11.264"
+    testImplementation 'ch.qos.logback:logback-classic:1.5.16'
 }
 
 javafx {
@@ -49,7 +51,7 @@ tasks.shadowJar {
     archiveClassifier.set(null)
     manifest {
         attributes(
-                'Plugin-Class': 'com.ixnah.hmcl.mpzt.MpztPlugin',
+                'Plugin-Class': 'com.ixnah.mpzt.MpztPlugin',
                 'Plugin-Id': project.name,
                 'Plugin-Version': project.version,
                 'Implementation-Version': project.version,

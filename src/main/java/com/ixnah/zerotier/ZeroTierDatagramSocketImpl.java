@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.zerotier;
+package com.ixnah.zerotier;
 
 import com.zerotier.sockets.ZeroTierNative;
 import com.zerotier.sockets.ZeroTierSocket;
@@ -115,14 +115,14 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
     protected void joinGroup(SocketAddress mcastaddr, NetworkInterface netIf) throws IOException {
         InetAddress group = checkGroup(mcastaddr);
         if (_socket.isClosed()) throw new SocketException("Socket is closed");
-        ZeroTier.addMembership(_socket.getNativeFileDescriptor(), group);
+        ZeroTierUtil.addMembership(_socket.getNativeFileDescriptor(), group);
     }
 
     @Override
     protected void leaveGroup(SocketAddress mcastaddr, NetworkInterface netIf) throws IOException {
         InetAddress group = checkGroup(mcastaddr);
         if (_socket.isClosed()) throw new SocketException("Socket is closed");
-        ZeroTier.dropMembership(_socket.getNativeFileDescriptor(), group);
+        ZeroTierUtil.dropMembership(_socket.getNativeFileDescriptor(), group);
     }
 
     @Override
@@ -147,35 +147,35 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
                 break;
             case SO_BROADCAST:
                 if (value instanceof Boolean) {
-                    ZeroTier.setBroadcast(_socket.getNativeFileDescriptor(), (Boolean) value);
+                    ZeroTierUtil.setBroadcast(_socket.getNativeFileDescriptor(), (Boolean) value);
                 } else if (value instanceof Number
                         && ((Number) value).intValue() >= 0 && ((Number) value).intValue() <= 1) {
-                    ZeroTier.setBroadcast(_socket.getNativeFileDescriptor(), ((Number) value).intValue() == 1);
+                    ZeroTierUtil.setBroadcast(_socket.getNativeFileDescriptor(), ((Number) value).intValue() == 1);
                 }
                 break;
             case IP_MULTICAST_IF:
             case IP_MULTICAST_IF2:
                 InetAddress address = null;
                 if (value instanceof NetworkInterface) {
-                    if (ZeroTier.node == null) throw new SocketException("ZeroTier node not set");
-                    address = ZeroTier.node.getIPv4Address(ZeroTier.networkId);
+                    if (ZeroTierUtil.node == null) throw new SocketException("ZeroTier node not set");
+                    address = ZeroTierUtil.node.getIPv4Address(ZeroTierUtil.networkId);
                 } else if (value instanceof InetAddress) {
                     address = (InetAddress) value;
                 }
                 if (address == null) throw new SocketException("Unsupported value for IP_MULTICAST_IF: " + value);
-                ZeroTier.setInterface(_socket.getNativeFileDescriptor(), address);
+                ZeroTierUtil.setInterface(_socket.getNativeFileDescriptor(), address);
                 break;
             case IP_MULTICAST_LOOP:
                 if (value instanceof Boolean) {
-                    ZeroTier.setLoopbackMode(_socket.getNativeFileDescriptor(), (Boolean) value);
+                    ZeroTierUtil.setLoopbackMode(_socket.getNativeFileDescriptor(), (Boolean) value);
                 } else if (value instanceof Number
                         && ((Number) value).intValue() >= 0 && ((Number) value).intValue() <= 1) {
-                    ZeroTier.setLoopbackMode(_socket.getNativeFileDescriptor(), ((Number) value).intValue() == 1);
+                    ZeroTierUtil.setLoopbackMode(_socket.getNativeFileDescriptor(), ((Number) value).intValue() == 1);
                 }
                 break;
             case IP_TOS:
                 if (value instanceof Number)
-                    ZeroTier.setTrafficClass(_socket.getNativeFileDescriptor(), ((Number) value).intValue());
+                    ZeroTierUtil.setTrafficClass(_socket.getNativeFileDescriptor(), ((Number) value).intValue());
                 break;
             case SO_TIMEOUT:
                 if (value instanceof Number)
@@ -204,9 +204,9 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
             case SO_REUSEADDR:
                 return _socket.getReuseAddress();
             case SO_BROADCAST:
-                return ZeroTier.getSocketOption(_socket.getNativeFileDescriptor());
+                return ZeroTierUtil.getSocketOption(_socket.getNativeFileDescriptor());
             case IP_MULTICAST_IF:
-                return ZeroTier.getInterface(_socket.getNativeFileDescriptor());
+                return ZeroTierUtil.getInterface(_socket.getNativeFileDescriptor());
             case IP_MULTICAST_IF2:
                 try {
                     return getDefaultNetworkInterface.invoke();
@@ -214,9 +214,9 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
                     throw toSocketException(e);
                 }
             case IP_MULTICAST_LOOP:
-                return ZeroTier.getLoopbackMode(_socket.getNativeFileDescriptor());
+                return ZeroTierUtil.getLoopbackMode(_socket.getNativeFileDescriptor());
             case IP_TOS:
-                return ZeroTier.getTrafficClass(_socket.getNativeFileDescriptor());
+                return ZeroTierUtil.getTrafficClass(_socket.getNativeFileDescriptor());
             case SO_TIMEOUT:
                 return _socket.getSoTimeout();
             case SO_SNDBUF:

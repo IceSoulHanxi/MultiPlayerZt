@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.ui;
+package com.ixnah.mpzt.ui;
 
 import com.zerotier.sockets.ZeroTierEventListener;
 import com.zerotier.sockets.ZeroTierNative;

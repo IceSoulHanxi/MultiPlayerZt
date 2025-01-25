@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.zerotier;
+package com.ixnah.zerotier;
 
 import java.net.DatagramSocketImpl;
 import java.net.DatagramSocketImplFactory;

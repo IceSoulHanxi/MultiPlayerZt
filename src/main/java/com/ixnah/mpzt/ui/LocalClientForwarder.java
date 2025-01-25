@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.ui;
+package com.ixnah.mpzt.ui;
 
 public class LocalClientForwarder implements AutoCloseable {
     private volatile boolean running = true;

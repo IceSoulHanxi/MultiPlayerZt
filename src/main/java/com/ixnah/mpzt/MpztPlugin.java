@@ -1,9 +1,9 @@
-package com.ixnah.hmcl.mpzt;
+package com.ixnah.mpzt;
 
 import com.ixnah.hmcl.api.LoaderApi;
-import com.ixnah.hmcl.mpzt.asm.MpztTransformer;
-import com.ixnah.hmcl.mpzt.setting.MpztConfig;
-import com.ixnah.hmcl.mpzt.ui.MultiplayerPage;
+import com.ixnah.mpzt.asm.MpztTransformer;
+import com.ixnah.mpzt.setting.MpztConfig;
+import com.ixnah.mpzt.ui.MultiplayerPage;
 import org.jackhuang.hmcl.setting.Config;
 import org.jackhuang.hmcl.ui.Controllers;
 import org.jackhuang.hmcl.ui.SVG;

@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.setting;
+package com.ixnah.mpzt.setting;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;

@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.asm;
+package com.ixnah.mpzt.asm;
 
 import com.ixnah.hmcl.api.AsmClassTransformer;
 import org.objectweb.asm.Opcodes;
@@ -36,7 +36,7 @@ public class MpztTransformer implements AsmClassTransformer {
             VarInsnNode sideBarASTORE = (VarInsnNode) next;
             iterator.next();
             iterator.add(new VarInsnNode(Opcodes.ALOAD, sideBarASTORE.var));
-            iterator.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "com/ixnah/hmcl/mpzt/MpztPlugin", "onSideBarInit", "(Lorg/jackhuang/hmcl/ui/construct/AdvancedListBox;)V", false));
+            iterator.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "com/ixnah/mpzt/MpztPlugin", "onSideBarInit", "(Lorg/jackhuang/hmcl/ui/construct/AdvancedListBox;)V", false));
             modify.set(true);
             return;
         }

@@ -1,8 +1,5 @@
 package com.ixnah.zerotier;
 
-import com.ixnah.hmcl.mpzt.zerotier.ZeroTier;
-import com.ixnah.hmcl.mpzt.zerotier.ZeroTierDatagramSocketImplFactory;
-import com.ixnah.hmcl.mpzt.zerotier.ZeroTierLibrary;
 import com.sun.jna.Native;
 import com.zerotier.sockets.*;
 
@@ -50,13 +47,13 @@ public class Example {
 
         // Loads dynamic library at initialization time
         System.loadLibrary("libzt");
-        ZeroTier.libzt = Native.loadLibrary("libzt", ZeroTierLibrary.class);
+        ZeroTierUtil.libzt = Native.loadLibrary("libzt", ZeroTierLibrary.class);
         if (zts_init() != ZeroTierNative.ZTS_ERR_OK) {
             throw new ExceptionInInitializerError("JNI init() failed (see GetJavaVM())");
         }
 
         ZeroTierNode node = new ZeroTierNode();
-        ZeroTier.node = node;
+        ZeroTierUtil.node = node;
         node.initFromStorage(storagePath);
         node.initSetEventHandler(new MyZeroTierEventListener());
         // node.initSetPort(9994);
@@ -74,7 +71,7 @@ public class Example {
             ZeroTierNative.zts_util_delay(50);
         }
         System.out.println("Joined");
-        ZeroTier.networkId = networkId;
+        ZeroTierUtil.networkId = networkId;
 
         // IPv4
 

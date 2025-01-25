@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.ui;
+package com.ixnah.mpzt.ui;
 
 import javafx.beans.property.*;
 import javafx.scene.control.Skin;

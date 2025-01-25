@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.zerotier;
+package com.ixnah.zerotier;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
@@ -14,7 +14,7 @@ import java.net.UnknownHostException;
 
 import static com.zerotier.sockets.ZeroTierNative.*;
 
-public class ZeroTier {
+public class ZeroTierUtil {
 
     public static final int ZTS_IP_ADD_MEMBERSHIP = 3;
     public static final int ZTS_IP_DROP_MEMBERSHIP = 4;
@@ -96,8 +96,8 @@ public class ZeroTier {
 
     public static void addMembership(int fd, InetAddress group) throws IOException {
         if (!(group instanceof Inet4Address)) throw new SocketException("Only IPv4 addresses are supported");
-        if (ZeroTier.node == null) throw new SocketException("ZeroTier node not set");
-        InetAddress listenAddress = ZeroTier.node.getIPv4Address(ZeroTier.networkId);
+        if (ZeroTierUtil.node == null) throw new SocketException("ZeroTier node not set");
+        InetAddress listenAddress = ZeroTierUtil.node.getIPv4Address(ZeroTierUtil.networkId);
         Memory memory = new Memory(8);
         byte[] groupAddress = group.getAddress();
         for (int i = 0; i < groupAddress.length; i++) {
@@ -118,8 +118,8 @@ public class ZeroTier {
 
     public static void dropMembership(int fd, InetAddress group) throws IOException {
         if (!(group instanceof Inet4Address)) throw new SocketException("Only IPv4 addresses are supported");
-        if (ZeroTier.node == null) throw new SocketException("ZeroTier node not set");
-        InetAddress listenAddress = ZeroTier.node.getIPv4Address(ZeroTier.networkId);
+        if (ZeroTierUtil.node == null) throw new SocketException("ZeroTier node not set");
+        InetAddress listenAddress = ZeroTierUtil.node.getIPv4Address(ZeroTierUtil.networkId);
         Memory memory = new Memory(8);
         byte[] groupAddress = group.getAddress();
         for (int i = 0; i < groupAddress.length; i++) {
@@ -129,7 +129,7 @@ public class ZeroTier {
         for (int i = 0; i < listenAddressBytes.length; i++) {
             memory.setByte(i + 4, listenAddressBytes[i]);
         }
-        int i = libzt.zts_bsd_setsockopt(fd, ZTS_IPPROTO_IP, ZTS_IP_ADD_MEMBERSHIP, memory, 8);
+        int i = libzt.zts_bsd_setsockopt(fd, ZTS_IPPROTO_IP, ZTS_IP_DROP_MEMBERSHIP, memory, 8);
         System.out.println(i);
         if (i == -1) {
             System.out.println(Native.getLastError());

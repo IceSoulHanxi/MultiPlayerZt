@@ -1,4 +1,4 @@
-package com.ixnah.hmcl.mpzt.ui;
+package com.ixnah.mpzt.ui;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXPasswordField;
@@ -23,7 +23,7 @@ import org.jackhuang.hmcl.ui.decorator.DecoratorAnimatedPage;
 import org.jackhuang.hmcl.util.Lang;
 import org.jackhuang.hmcl.util.StringUtils;
 
-import static com.ixnah.hmcl.mpzt.MpztPlugin.pluginConfig;
+import static com.ixnah.mpzt.MpztPlugin.pluginConfig;
 import static org.jackhuang.hmcl.ui.versions.VersionPage.wrap;
 import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
 
