@@ -1,4 +1,4 @@
-package com.ixnah.mpzt.ui;
+package com.ixnah.mpzt.network;
 
 import com.zerotier.sockets.ZeroTierEventListener;
 import com.zerotier.sockets.ZeroTierNative;
@@ -15,10 +15,9 @@ import java.util.concurrent.locks.LockSupport;
 import static com.zerotier.sockets.ZeroTierNative.*;
 import static org.jackhuang.hmcl.util.Lang.wrap;
 
-public class MultiplayerManager {
+public class NetworkManager {
 
     private static Path initDir;
-    private static ZeroTierNode node;
 
     public static void initialize(Path initDir) {
         String dllSuffix = OperatingSystem.WINDOWS.equals(OperatingSystem.CURRENT_OS) ? ".dll" : ".so";
@@ -34,14 +33,7 @@ public class MultiplayerManager {
         if (zts_init() != ZeroTierNative.ZTS_ERR_OK) {
             throw new ExceptionInInitializerError("JNI init() failed (see GetJavaVM())");
         }
-        MultiplayerManager.initDir = initDir;
-    }
-
-    public static void shutdown() {
-        if (node != null) {
-            node.stop();
-            node = null;
-        }
+        NetworkManager.initDir = initDir;
     }
 
     public static CompletableFuture<ZeroTierNode> startNode(String networkId) {
@@ -74,12 +66,13 @@ public class MultiplayerManager {
                 node.stop();
                 throw new ExceptionInInitializerError("Node setup network transport timeout!");
             }
+            final int ASSIGNED = 1;
             for (int i = (int) (maxWaitTime / delayTime); i > 0; i--) {
                 statusCode = zts_addr_is_assigned(parsedId, ZTS_AF_INET);
-                if (statusCode == ZTS_ERR_OK) break;
+                if (statusCode == ASSIGNED) break;
                 LockSupport.parkNanos(delayTime);
             }
-            if (statusCode != ZTS_ERR_OK) {
+            if (statusCode != ASSIGNED) {
                 node.leave(parsedId);
                 node.stop();
                 throw new ExceptionInInitializerError("Node assign ip timeout!");

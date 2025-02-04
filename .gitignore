@@ -51,3 +51,6 @@ roots
 
 ### JVM ###
 hs_err_pid*.log
+
+### Minecraft ###
+.minecraft

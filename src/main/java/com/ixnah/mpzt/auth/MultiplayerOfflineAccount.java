@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.ixnah.mpzt.ui;
+package com.ixnah.mpzt.auth;
 
 import org.jackhuang.hmcl.auth.authlibinjector.AuthlibInjectorArtifactProvider;
 import org.jackhuang.hmcl.auth.offline.OfflineAccount;

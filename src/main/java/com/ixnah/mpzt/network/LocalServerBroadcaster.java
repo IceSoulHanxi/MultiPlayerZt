@@ -15,38 +15,43 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.ixnah.mpzt.ui;
+package com.ixnah.mpzt.network;
 
 import com.zerotier.sockets.ZeroTierSocket;
 import org.jackhuang.hmcl.event.Event;
 import org.jackhuang.hmcl.event.EventManager;
-import org.jackhuang.hmcl.util.Lang;
-import org.jackhuang.hmcl.util.logging.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.*;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import static com.ixnah.mpzt.network.ServiceNetworkHandler.forwardTraffic;
 import static com.zerotier.sockets.ZeroTierNative.ZTS_AF_INET;
 import static com.zerotier.sockets.ZeroTierNative.ZTS_SOCK_STREAM;
-import static org.jackhuang.hmcl.util.logging.Logger.LOG;
+import static org.jackhuang.hmcl.util.Lang.parseInt;
+import static org.jackhuang.hmcl.util.Lang.wrap;
 import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
 
-public class LocalServerBroadcaster implements AutoCloseable {
-    private final String address;
+public class LocalServerBroadcaster implements ServiceNetworkHandler {
+    private static final Logger LOG = LoggerFactory.getLogger(LocalServerBroadcaster.class);
+
+    private final String remoteAddress;
     private final ThreadGroup threadGroup = new ThreadGroup("JoinSession");
 
     private final EventManager<Event> onExit = new EventManager<>();
+    private final EventManager<Event> onConnected = new EventManager<>();
+    private final EventManager<Event> onDisconnected = new EventManager<>();
 
     private boolean running = true;
 
-    public LocalServerBroadcaster(String address) {
-        this.address = address;
+    public LocalServerBroadcaster(String remoteAddress) {
+        this.remoteAddress = remoteAddress;
     }
 
     private Thread newThread(Runnable task, String name) {
@@ -61,70 +66,72 @@ public class LocalServerBroadcaster implements AutoCloseable {
         threadGroup.interrupt();
     }
 
-    public String getAddress() {
-        return address;
+    @Override
+    public List<String> getRemoteAddresses() {
+        return Collections.singletonList(remoteAddress);
     }
 
+    @Override
+    public String getLocalAddress() {
+        return null;
+    }
+
+    @Override
     public EventManager<Event> onExit() {
         return onExit;
     }
 
-    public static final Pattern ADDRESS_PATTERN = Pattern.compile("^\\s*(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d{1,5})\\s*$");
+    @Override
+    public EventManager<Event> onConnected() {
+        return onConnected;
+    }
 
-    public void start() {
+    @Override
+    public EventManager<Event> onDisconnected() {
+        return onDisconnected;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+    @Override
+    public void run() {
         Thread forwardPortThread = newThread(this::forwardPort, "ForwardPort");
         forwardPortThread.start();
     }
 
     private void forwardPort() {
         try {
-            Matcher matcher = ADDRESS_PATTERN.matcher(address);
+            Matcher matcher = ADDRESS_PATTERN.matcher(remoteAddress);
             if (!matcher.find()) {
                 throw new MalformedURLException();
             }
             try (ZeroTierSocket forwardingSocket = new ZeroTierSocket(ZTS_AF_INET, ZTS_SOCK_STREAM, 0);
                  ServerSocket serverSocket = new ServerSocket()) {
                 forwardingSocket.setSoTimeout(30000);
-                forwardingSocket.connect(new InetSocketAddress(matcher.group(1), Lang.parseInt(matcher.group(2), 0)));
+                forwardingSocket.connect(new InetSocketAddress(matcher.group(1), parseInt(matcher.group(2), 0)));
 
                 serverSocket.bind(null);
 
                 Thread broadcastMOTDThread = newThread(() -> broadcastMOTD(serverSocket.getLocalPort()), "BroadcastMOTD");
                 broadcastMOTDThread.start();
 
-                LOG.log(Level.INFO, "Listening " + serverSocket.getLocalSocketAddress());
+                LOG.info("Listening " + serverSocket.getLocalSocketAddress());
 
                 while (running) {
                     Socket forwardedSocket = serverSocket.accept();
-                    LOG.log(Level.INFO, "Accepting client");
-                    newThread(() -> forwardTraffic(forwardingSocket::getInputStream, forwardedSocket::getOutputStream), "Forward S->D").start();
-                    newThread(() -> forwardTraffic(forwardedSocket::getInputStream, forwardingSocket::getOutputStream), "Forward D->S").start();
+                    LOG.info("Accepting client");
+                    newThread(() -> forwardTraffic(wrap(forwardingSocket::getInputStream), wrap(forwardedSocket::getOutputStream)), "Forward S->D").start();
+                    newThread(() -> forwardTraffic(wrap(forwardedSocket::getInputStream), wrap(forwardingSocket::getOutputStream)), "Forward D->S").start();
                 }
             }
         } catch (IOException | UnresolvedAddressException e) {
-            LOG.log(Level.WARNING, "Error in forwarding port", e);
+            LOG.warn("Error in forwarding port", e);
         } finally {
             close();
             onExit.fireEvent(new Event(this));
-        }
-    }
-
-    @FunctionalInterface
-    public interface IoSupplier<T> {
-        T get() throws IOException;
-    }
-
-    private void forwardTraffic(IoSupplier<InputStream> src, IoSupplier<OutputStream> dest) {
-        try (InputStream is = src.get(); OutputStream os = dest.get()) {
-            byte[] buf = new byte[1024];
-            while (true) {
-                int len = is.read(buf, 0, buf.length);
-                if (len < 0) break;
-                LOG.log(Level.INFO, "Forwarding buffer " + len);
-                os.write(buf, 0, len);
-            }
-        } catch (IOException e) {
-            LOG.log(Level.WARNING, "Disconnected", e);
         }
     }
 
@@ -135,7 +142,7 @@ public class LocalServerBroadcaster implements AutoCloseable {
             socket = new DatagramSocket();
             broadcastAddress = InetAddress.getByName("224.0.2.60");
         } catch (IOException e) {
-            LOG.log(Level.WARNING, "Failed to create datagram socket", e);
+            LOG.warn("Failed to create datagram socket", e);
             return;
         }
 
@@ -146,7 +153,7 @@ public class LocalServerBroadcaster implements AutoCloseable {
                 socket.send(packet);
                 LOG.trace("Broadcast server 0.0.0.0:" + port);
             } catch (IOException e) {
-                LOG.log(Level.WARNING, "Failed to send motd packet", e);
+                LOG.warn("Failed to send motd packet", e);
             }
 
             try {

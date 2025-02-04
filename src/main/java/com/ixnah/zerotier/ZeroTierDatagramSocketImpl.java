@@ -96,7 +96,9 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
             joinGroup(new InetSocketAddress(group, 0), null);
         } catch (IllegalArgumentException iae) {
             // 1-arg joinGroup does not specify IllegalArgumentException
-            throw new SocketException("joinGroup failed", iae);
+            SocketException e = new SocketException("joinGroup failed");
+            e.addSuppressed(iae);
+            throw e;
         }
     }
 
@@ -107,7 +109,9 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
             leaveGroup(new InetSocketAddress(group, 0), null);
         } catch (IllegalArgumentException iae) {
             // 1-arg leaveGroup does not specify IllegalArgumentException
-            throw new SocketException("leaveGroup failed", iae);
+            SocketException e = new SocketException("leaveGroup failed");
+            e.addSuppressed(iae);
+            throw e;
         }
     }
 
@@ -255,6 +259,8 @@ public class ZeroTierDatagramSocketImpl extends DatagramSocketImpl {
         Throwable cause = e.getCause();
         if (cause instanceof SocketException)
             return (SocketException) cause;
-        return new SocketException(e.getMessage(), e);
+        SocketException exception = new SocketException(e.getMessage());
+        exception.addSuppressed(e);
+        return exception;
     }
 }

@@ -2,6 +2,7 @@ package com.ixnah.mpzt;
 
 import com.ixnah.hmcl.api.LoaderApi;
 import com.ixnah.mpzt.asm.MpztTransformer;
+import com.ixnah.mpzt.network.NetworkManager;
 import com.ixnah.mpzt.setting.MpztConfig;
 import com.ixnah.mpzt.ui.MultiplayerPage;
 import org.jackhuang.hmcl.setting.Config;
@@ -41,6 +42,7 @@ public class MpztPlugin extends Plugin {
             } else {
                 this.config = new MpztConfig();
             }
+            NetworkManager.initialize(this.pluginDir);
         } catch (IOException e) {
             log.error("Failed to initialize MultiPlayerZt", e);
         }

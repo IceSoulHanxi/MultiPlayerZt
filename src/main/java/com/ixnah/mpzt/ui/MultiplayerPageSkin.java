@@ -1,20 +1,21 @@
 package com.ixnah.mpzt.ui;
 
-import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXPasswordField;
-import com.jfoenix.controls.JFXTextField;
+import com.ixnah.zerotier.central.model.Network;
+import com.jfoenix.controls.*;
 import javafx.beans.InvalidationListener;
 import javafx.beans.WeakInvalidationListener;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.*;
 import javafx.util.StringConverter;
-import org.jackhuang.hmcl.ui.Controllers;
+import org.jackhuang.hmcl.task.Schedulers;
 import org.jackhuang.hmcl.ui.FXUtils;
 import org.jackhuang.hmcl.ui.SVG;
 import org.jackhuang.hmcl.ui.construct.*;
@@ -23,7 +24,8 @@ import org.jackhuang.hmcl.ui.decorator.DecoratorAnimatedPage;
 import org.jackhuang.hmcl.util.Lang;
 import org.jackhuang.hmcl.util.StringUtils;
 
-import static com.ixnah.mpzt.MpztPlugin.pluginConfig;
+import static com.ixnah.mpzt.ui.MultiplayerPage.MASTER_MODE;
+import static com.ixnah.mpzt.ui.MultiplayerPage.SLAVE_MODE;
 import static org.jackhuang.hmcl.ui.versions.VersionPage.wrap;
 import static org.jackhuang.hmcl.util.i18n.I18n.i18n;
 
@@ -44,9 +46,7 @@ public class MultiplayerPageSkin extends DecoratorAnimatedPage.DecoratorAnimated
                     .addNavigationDrawerItem(item -> {
                         item.setTitle(i18n("version.launch"));
                         item.setLeftGraphic(wrap(SVG.ROCKET_LAUNCH_OUTLINE));
-                        item.setOnAction(e -> {
-//                            control.launchGame()
-                        });
+                        item.setOnAction(e -> control.launchGame());
                     })
                     .startCategory(i18n("help"))
                     .addNavigationDrawerItem(item -> {
@@ -100,20 +100,120 @@ public class MultiplayerPageSkin extends DecoratorAnimatedPage.DecoratorAnimated
             {
                 ComponentList offPane = new ComponentList();
                 {
-                    HintPane hintPane = new HintPane(MessageType.WARNING);
-                    hintPane.setText(i18n("multiplayer.off.hint"));
+                    BorderPane modeSelectPane = new BorderPane();
+                    {
+                        Label modeTitle = new Label("请选择模式");
+                        BorderPane.setAlignment(modeTitle, Pos.CENTER_LEFT);
+                        modeSelectPane.setLeft(modeTitle);
 
-                    BorderPane tokenPane = new BorderPane();
+                        ToggleGroup modeGroup = new ToggleGroup();
+                        JFXRadioButton slaveRadioButton = new JFXRadioButton("我是参与方");
+                        slaveRadioButton.setUserData(SLAVE_MODE);
+                        slaveRadioButton.setToggleGroup(modeGroup);
+                        JFXRadioButton masterRadioButton = new JFXRadioButton("我是创建方");
+                        masterRadioButton.setUserData(MASTER_MODE);
+                        masterRadioButton.setToggleGroup(modeGroup);
+                        modeGroup.selectToggle(slaveRadioButton);
+
+                        HBox modeGroupPane = new HBox();
+                        modeGroupPane.getChildren().addAll(slaveRadioButton, masterRadioButton);
+
+                        modeGroup.selectedToggleProperty()
+                                .addListener((ov, old, newv) -> control.setMode(newv.getUserData().toString()));
+
+                        BorderPane.setAlignment(modeGroupPane, Pos.CENTER_LEFT);
+                        BorderPane.setMargin(modeGroupPane, new Insets(0, 8, 0, 8));
+                        modeSelectPane.setCenter(modeGroupPane);
+                    }
+
+                    ColumnConstraints masterTitleColumn = new ColumnConstraints();
+                    ColumnConstraints masterValueColumn = new ColumnConstraints();
+                    ColumnConstraints masterRightColumn = new ColumnConstraints();
+                    masterValueColumn.setFillWidth(true);
+                    masterValueColumn.setHgrow(Priority.ALWAYS);
+                    GridPane masterAccountPane = new GridPane();
+                    masterAccountPane.setVgap(8);
+                    masterAccountPane.setHgap(16);
+                    masterAccountPane.getColumnConstraints().setAll(masterTitleColumn, masterValueColumn, masterRightColumn);
+                    {
+                        BorderPane titlePane = new BorderPane();
+                        GridPane.setColumnSpan(titlePane, 3);
+                        Label title = new Label(i18n("multiplayer.master"));
+                        titlePane.setLeft(title);
+
+                        JFXHyperlink tutorial = new JFXHyperlink(i18n("multiplayer.master.video_tutorial"));
+                        titlePane.setRight(tutorial);
+//                        tutorial.setOnAction(e -> HMCLService.openRedirectLink("multiplayer-tutorial-master"));
+                        masterAccountPane.addRow(0, titlePane);
+
+                        HintPane hintPane = new HintPane(MessageType.INFO);
+                        GridPane.setColumnSpan(hintPane, 3);
+                        hintPane.setText(i18n("account.hmcl.hint"));
+                        masterAccountPane.addRow(1, hintPane);
+
+                        Label accountTitle = new Label(i18n("account"));
+
+                        JFXTextField emailField = new JFXTextField();
+                        emailField.setPromptText("暂未登录");
+                        emailField.setEditable(false);
+                        FXUtils.bindString(emailField, control.emailProperty());
+
+                        JFXButton btnLogin = new JFXButton(i18n("account.login"));
+                        btnLogin.getStyleClass().add("dialog-accept");
+                        btnLogin.setOnAction(e -> control.openOidcLink());
+
+                        masterAccountPane.addRow(2, accountTitle, emailField, btnLogin);
+
+                        Label networkTitle = new Label(i18n("multiplayer.token"));
+                        JFXComboBox<Network> networkSelector = new JFXComboBox<>();
+                        networkSelector.setMaxWidth(Double.MAX_VALUE);
+                        networkSelector.setConverter(FXUtils.stringConverter(n -> n.getConfig().getName() + " (" + n.getId() + ")"));
+                        networkSelector.valueProperty()
+                                .addListener((ov, old, newv) -> control.setNetworkId(newv.getId()));
+                        JFXButton btnCreateNetwork = new JFXButton("新建");
+                        btnCreateNetwork.getStyleClass().add("dialog-accept");
+                        btnCreateNetwork.setOnAction(e -> {
+                            // TODO: 对话框新建网络
+                        });
+
+                        HBox networkPane = new HBox(8);
+                        networkPane.setAlignment(Pos.CENTER_LEFT);
+                        networkPane.getChildren().addAll(networkTitle, networkSelector, btnCreateNetwork);
+                        GridPane.setColumnSpan(networkPane, 3);
+                        masterAccountPane.addRow(3, networkPane);
+                        FXUtils.onChangeAndOperate(control.emailProperty(), email -> {
+                            if (StringUtils.isNotBlank(email)) {
+                                control.getCentral().getNetworkList().thenAcceptAsync(list -> {
+                                    networkSelector.getItems().setAll(list);
+                                    networkSelector.getSelectionModel().select(0);
+                                    networkPane.getChildren().addAll(networkTitle, networkSelector, btnCreateNetwork);
+                                }, Schedulers.javafx());
+                            } else {
+                                networkPane.getChildren().clear();
+                                networkSelector.getItems().clear();
+                                networkSelector.getSelectionModel().clearSelection();
+                            }
+                        });
+                    }
+
+                    ColumnConstraints slaveTitleColumn = new ColumnConstraints();
+                    ColumnConstraints slaveValueColumn = new ColumnConstraints();
+                    ColumnConstraints slaveRightColumn = new ColumnConstraints();
+                    slaveValueColumn.setFillWidth(true);
+                    slaveValueColumn.setHgrow(Priority.ALWAYS);
+
+                    GridPane slaveTokenPane = new GridPane();
+                    slaveTokenPane.setVgap(8);
+                    slaveTokenPane.setHgap(16);
+                    slaveTokenPane.getColumnConstraints().setAll(slaveTitleColumn, slaveValueColumn, slaveRightColumn);
                     {
                         Label tokenTitle = new Label(i18n("multiplayer.token"));
                         BorderPane.setAlignment(tokenTitle, Pos.CENTER_LEFT);
-                        tokenPane.setLeft(tokenTitle);
                         // Token acts like password, we hide it here preventing users from accidentally leaking their token when taking screenshots.
                         JFXPasswordField tokenField = new JFXPasswordField();
                         BorderPane.setAlignment(tokenField, Pos.CENTER_LEFT);
                         BorderPane.setMargin(tokenField, new Insets(0, 8, 0, 8));
-                        tokenPane.setCenter(tokenField);
-                        tokenField.textProperty().bindBidirectional(pluginConfig().multiplayerTokenProperty());
+                        tokenField.textProperty().bindBidirectional(control.networkIdProperty());
                         tokenField.setPromptText(i18n("multiplayer.token.prompt"));
 
                         Validator validator = new Validator("multiplayer.token.format_invalid", StringUtils::isAlphabeticOrNumber);
@@ -124,17 +224,19 @@ public class MultiplayerPageSkin extends DecoratorAnimatedPage.DecoratorAnimated
 
                         JFXHyperlink applyLink = new JFXHyperlink(i18n("multiplayer.token.apply"));
                         BorderPane.setAlignment(applyLink, Pos.CENTER_RIGHT);
-//                        applyLink.setOnAction(e -> HMCLService.openRedirectLink("multiplayer-static-token"));
-                        tokenPane.setRight(applyLink);
+                        slaveTokenPane.addRow(1, tokenTitle, tokenField, applyLink);
                     }
 
                     HBox startPane = new HBox();
                     {
-                        JFXButton startButton = new JFXButton(i18n("multiplayer.off.start"));
+                        JFXButton startButton = new JFXButton("启动 Zerotier"/*i18n("multiplayer.off.start")*/);
                         startButton.getStyleClass().add("jfx-button-raised");
                         startButton.setButtonType(JFXButton.ButtonType.RAISED);
                         startButton.setOnMouseClicked(e -> {
-//                            control.start()
+                            control.startNode();
+                            if (MASTER_MODE.equals(control.getMode())) {
+                                control.startPrivateNetworkAcceptor();
+                            }
                         });
 //                        startButton.disableProperty().bind(MultiplayerManager.tokenInvalid);
 
@@ -142,20 +244,19 @@ public class MultiplayerPageSkin extends DecoratorAnimatedPage.DecoratorAnimated
                         startPane.setAlignment(Pos.CENTER_RIGHT);
                     }
 
-//                    if (!MultiplayerManager.IS_ADMINISTRATOR)
-//                        offPane.getContent().add(hintPane);
-                    offPane.getContent().addAll(tokenPane, startPane);
+                    FXUtils.onChangeAndOperate(control.modeProperty(), mode -> {
+                        ObservableList<Node> nodes = offPane.getContent();
+                        nodes.clear();
+                        if (SLAVE_MODE.equals(mode)) {
+                            nodes.addAll(modeSelectPane, slaveTokenPane, startPane);
+                        } else {
+                            nodes.addAll(modeSelectPane, masterAccountPane, startPane);
+                        }
+                    });
                 }
 
                 ComponentList onPane = new ComponentList();
                 {
-                    BorderPane expirationPane = new BorderPane();
-                    expirationPane.setLeft(new Label(i18n("multiplayer.session.expiration")));
-                    Label expirationLabel = new Label();
-//                    expirationLabel.textProperty().bind(Bindings.createStringBinding(() ->
-//                                    control.getExpireTime() == null ? "" : Locales.SIMPLE_DATE_FORMAT.get().format(control.getExpireTime()),
-//                            control.expireTimeProperty()));
-                    expirationPane.setRight(expirationLabel);
 
                     GridPane masterPane = new GridPane();
                     masterPane.setVgap(8);
@@ -186,11 +287,9 @@ public class MultiplayerPageSkin extends DecoratorAnimatedPage.DecoratorAnimated
                         BorderPane.setAlignment(portTitle, Pos.CENTER_LEFT);
 
                         JFXTextField portTextField = new JFXTextField();
-                        GridPane.setColumnSpan(portTextField, 2);
-                        FXUtils.setValidateWhileTextChanged(portTextField, true);
                         portTextField.getValidators().add(new Validator(i18n("multiplayer.master.port.validate"), (text) -> {
                             Integer value = Lang.toIntOrNull(text);
-                            return value != null && 0 <= value && value <= 65535;
+                            return value != null && 0 < value && value <= 65535;
                         }));
                         portTextField.textProperty().bindBidirectional(control.portProperty(), new StringConverter<Number>() {
                             @Override
@@ -203,7 +302,30 @@ public class MultiplayerPageSkin extends DecoratorAnimatedPage.DecoratorAnimated
                                 return Lang.parseInt(string, 0);
                             }
                         });
-                        masterPane.addRow(2, portTitle, portTextField);
+                        FXUtils.setValidateWhileTextChanged(portTextField, true);
+
+                        HBox actionPane = new HBox();
+                        {
+                            JFXButton startButton = new JFXButton("开启");
+                            startButton.setOnAction(e -> control.forward(control.getPort()));
+                            FXUtils.onChangeAndOperate(portTextField.textProperty(), text -> startButton.setDisable(!portTextField.validate()));
+
+                            JFXButton stopButton = new JFXButton("停止");
+                            stopButton.setOnAction(e -> control.stopForward());
+
+                            FXUtils.onChangeAndOperate(control.forwarderProperty(), forwarder -> {
+                                if (forwarder == null) {
+                                    portTextField.setDisable(false);
+                                    actionPane.getChildren().setAll(startButton);
+                                    control.detectLocal();
+                                } else {
+                                    portTextField.setDisable(true);
+                                    actionPane.getChildren().setAll(stopButton);
+                                    control.stopDetectLocal();
+                                }
+                            });
+                        }
+                        masterPane.addRow(2, portTitle, portTextField, actionPane);
 
                         Label serverAddressTitle = new Label(i18n("multiplayer.master.server_address"));
                         BorderPane.setAlignment(serverAddressTitle, Pos.CENTER_LEFT);
@@ -263,7 +385,7 @@ public class MultiplayerPageSkin extends DecoratorAnimatedPage.DecoratorAnimated
                             Label addressTitle = new Label(i18n("multiplayer.slave.server_address"));
                             Label addressLabel = new Label();
                             addressLabel.textProperty().bind(Bindings.createStringBinding(() ->
-                                            control.getBroadcaster() != null ? control.getBroadcaster().getAddress() : "",
+                                            control.getBroadcaster() != null ? control.getBroadcaster().getRemoteAddresses().get(0) : "",
                                     control.broadcasterProperty()));
 
                             JFXButton stopButton = new JFXButton(i18n("multiplayer.slave.server_address.stop"));
@@ -280,151 +402,39 @@ public class MultiplayerPageSkin extends DecoratorAnimatedPage.DecoratorAnimated
                         });
                     }
 
-//                    FXUtils.onChangeAndOperate(control.expireTimeProperty(), t -> {
-//                        if (t == null) {
-//                            onPane.getContent().setAll(masterPane, slavePane);
-//                        } else {
-//                            onPane.getContent().setAll(expirationPane, masterPane, slavePane);
-//                        }
-//                    });
-                    onPane.getContent().setAll(masterPane, slavePane);
-                }
-
-//                FXUtils.onChangeAndOperate(getSkinnable().sessionProperty(), session -> {
-//                    if (session == null) {
-//                        mainPane.getChildren().setAll(offPane);
-//                    } else {
-//                        mainPane.getChildren().setAll(onPane);
-//                    }
-//                });
-                mainPane.getChildren().setAll(onPane);
-            }
-
-            ComponentList persistencePane = new ComponentList();
-            {
-                HintPane hintPane = new HintPane(MessageType.WARNING);
-                hintPane.setText(i18n("multiplayer.persistence.hint"));
-
-                BorderPane importPane = new BorderPane();
-                {
-                    Label left = new Label(i18n("multiplayer.persistence.import"));
-                    BorderPane.setAlignment(left, Pos.CENTER_LEFT);
-                    importPane.setLeft(left);
-
-                    JFXButton importButton = new JFXButton(i18n("multiplayer.persistence.import.button"));
-                    importButton.setOnMouseClicked(e -> {
-//                        Path targetPath = MultiplayerManager.getConfigPath(pluginConfig().getMultiplayerToken());
-//                        if (Files.exists(targetPath)) {
-//                            LOG.warning("License file " + targetPath + " already exists");
-//                            Controllers.dialog(i18n("multiplayer.persistence.import.file_already_exists"), null, MessageType.ERROR);
-//                            return;
-//                        }
-//
-//                        FileChooser fileChooser = new FileChooser();
-//                        fileChooser.setTitle(i18n("multiplayer.persistence.import.title"));
-//                        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(i18n("multiplayer.persistence.license_file"), "*.yml"));
-//
-//                        File file = fileChooser.showOpenDialog(Controllers.getStage());
-//                        if (file == null)
-//                            return;
-//
-//                        CompletableFuture<Boolean> future = new CompletableFuture<>();
-//                        if (file.getName().matches("[a-z0-9]{40}.yml") && !targetPath.getFileName().toString().equals(file.getName())) {
-//                            Controllers.confirm(i18n("multiplayer.persistence.import.token_not_match"), null, MessageType.QUESTION,
-//                                    () -> future.complete(true),
-//                                    () -> future.complete(false)) ;
-//                        } else {
-//                            future.complete(true);
-//                        }
-//                        future.thenAcceptAsync(Lang.wrapConsumer(c -> {
-//                            if (c) Files.copy(file.toPath(), targetPath);
-//                        })).exceptionally(exception -> {
-//                            LOG.log(Level.WARNING, "Failed to import license file", exception);
-//                            Platform.runLater(() -> Controllers.dialog(i18n("multiplayer.persistence.import.failed"), null, MessageType.ERROR));
-//                            return null;
-//                        });
+                    FXUtils.onChangeAndOperate(control.modeProperty(), mode -> {
+                        if (SLAVE_MODE.equals(mode)) {
+                            onPane.getContent().setAll(slavePane);
+                        } else {
+                            onPane.getContent().setAll(masterPane);
+                        }
                     });
-//                    importButton.disableProperty().bind(MultiplayerManager.tokenInvalid);
-                    importButton.getStyleClass().add("jfx-button-border");
-                    importPane.setRight(importButton);
                 }
 
-                BorderPane exportPane = new BorderPane();
-                {
-                    Label left = new Label(i18n("multiplayer.persistence.export"));
-                    BorderPane.setAlignment(left, Pos.CENTER_LEFT);
-                    exportPane.setLeft(left);
-
-                    JFXButton exportButton = new JFXButton(i18n("multiplayer.persistence.export.button"));
-                    exportButton.setOnMouseClicked(e -> {
-//                        String token = pluginConfig().getMultiplayerToken();
-//                        Path configPath = MultiplayerManager.getConfigPath(token);
-//
-//                        FileChooser fileChooser = new FileChooser();
-//                        fileChooser.setTitle(i18n("multiplayer.persistence.export.title"));
-//                        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(i18n("multiplayer.persistence.license_file"), "*.yml"));
-//                        fileChooser.setInitialFileName(configPath.getFileName().toString());
-//
-//                        File file = fileChooser.showSaveDialog(Controllers.getStage());
-//                        if (file == null)
-//                            return;
-//
-//                        CompletableFuture.runAsync(Lang.wrap(() -> MultiplayerManager.downloadHiperConfig(token, configPath)), Schedulers.io())
-//                                .handleAsync((ignored, exception) -> {
-//                                    if (exception != null) {
-//                                        LOG.log(Level.INFO, "Unable to download hiper config file", e);
-//                                    }
-//
-//                                    if (!Files.isRegularFile(configPath)) {
-//                                        LOG.warning("License file " + configPath + " not exists");
-//                                        Platform.runLater(() -> Controllers.dialog(i18n("multiplayer.persistence.export.file_not_exists"), null, MessageType.ERROR));
-//                                        return null;
-//                                    }
-//
-//                                    try {
-//                                        Files.copy(configPath, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-//                                    } catch (IOException ioException) {
-//                                        LOG.log(Level.WARNING, "Failed to export license file", ioException);
-//                                        Platform.runLater(() -> Controllers.dialog(i18n("multiplayer.persistence.export.failed"), null, MessageType.ERROR));
-//                                    }
-//
-//                                    return null;
-//                                });
-
-                    });
-//                    exportButton.disableProperty().bind(MultiplayerManager.tokenInvalid);
-                    exportButton.getStyleClass().add("jfx-button-border");
-                    exportPane.setRight(exportButton);
-                }
-
-                persistencePane.getContent().setAll(hintPane, importPane, exportPane);
+                FXUtils.onChangeAndOperate(control.nodeProperty(), node -> {
+                    if (node == null) {
+                        mainPane.getChildren().setAll(offPane);
+                    } else {
+                        mainPane.getChildren().setAll(onPane);
+                    }
+                });
             }
-
 
             ComponentList thanksPane = new ComponentList();
             {
                 HBox pane = new HBox();
                 pane.setAlignment(Pos.CENTER_LEFT);
 
-                JFXHyperlink aboutLink = new JFXHyperlink(i18n("about"));
-//                aboutLink.setOnAction(e -> HMCLService.openRedirectLink("multiplayer-about"));
-
                 HBox placeholder = new HBox();
                 HBox.setHgrow(placeholder, Priority.ALWAYS);
 
-                pane.getChildren().setAll(
-                        new Label("Based on ZeroTier"),
-                        aboutLink,
-                        placeholder,
-                        FXUtils.segmentToTextFlow(i18n("multiplayer.powered_by"), Controllers::onHyperlinkAction));
+                pane.getChildren().setAll(new Label("Based on ZeroTier"));
 
                 thanksPane.getContent().addAll(pane);
             }
 
             content.getChildren().setAll(
                     mainPane,
-                    ComponentList.createComponentListTitle(i18n("multiplayer.persistence")),
-                    persistencePane,
                     ComponentList.createComponentListTitle(i18n("about")),
                     thanksPane
             );

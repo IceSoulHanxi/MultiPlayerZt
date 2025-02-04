@@ -13,27 +13,28 @@ repositories {
 
 dependencies {
     // 打包进jar
-    implementation('de.javawi.jstun:jstun:0.7.4') {
+    implementation("de.javawi.jstun:jstun:0.7.4") {
         exclude group: 'org.slf4j'
     }
-    implementation ('org.jmdns:jmdns:3.6.0') {
+    implementation ("org.jmdns:jmdns:3.6.0") {
         exclude group: 'org.slf4j'
     }
 
     // 运行期按需下载
-    implementation 'net.java.dev.jna:jna:4.4.0'
+    compileOnly "net.java.dev.jna:jna:4.4.0"
 
     // 加载器或HMCL携带
     compileOnly "org.pf4j:pf4j:3.13.0"
     compileOnly "org.slf4j:slf4j-api:2.0.16"
     compileOnly "org.ow2.asm:asm-tree:9.7.1"
-    compileOnly "org.glavo.hmcl:hmcl-dev:3.6.11.264"
+    compileOnly "org.glavo.hmcl:hmcl-dev:3.6.11.265"
 
     compileOnly files("libs/loader.jar")
 
     testRuntimeOnly "org.slf4j:slf4j-api:2.0.16"
-    testImplementation "org.glavo.hmcl:hmcl-dev:3.6.11.264"
-    testImplementation 'ch.qos.logback:logback-classic:1.5.16'
+    testImplementation "net.java.dev.jna:jna:4.4.0"
+    testImplementation "org.glavo.hmcl:hmcl-dev:3.6.11.265"
+    testImplementation "ch.qos.logback:logback-classic:1.5.16"
 }
 
 javafx {
